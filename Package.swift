@@ -9,12 +9,12 @@ let package = Package(
         .iOS(.v15)
     ],
     products: [
-        .library(name: "Jarust", targets: ["Jarust"]),
+        .library(name: "Jarust", targets: ["Jarust"])
     ],
     targets: [
         .target(
             name: "Jarust",
-            dependencies: ["JarustNative"],
+            dependencies: ["JarustNative"]
         ),
         .binaryTarget(
             name: "JarustNative",
@@ -23,7 +23,7 @@ let package = Package(
         ),
         .testTarget(
             name: "JarustTests",
-            dependencies: ["Jarust"],
-        ),
+            dependencies: ["Jarust"]
+        )
     ]
 )
