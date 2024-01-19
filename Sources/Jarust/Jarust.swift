@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_jarust_f30a_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_jarust_9d46_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_jarust_f30a_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_jarust_9d46_rustbuffer_free(self, $0) }
     }
 }
 
@@ -318,12 +318,408 @@ fileprivate struct FfiConverterString: FfiConverter {
     }
 }
 
+
+public protocol JaConnectionProtocol {
+    func `connect`(`config`: JaConfig, `cb`: JaCallback)
+
+}
+
+public class JaConnection: JaConnectionProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+    public convenience init() throws {
+        self.init(unsafeFromRawPointer: try
+
+    rustCallWithError(FfiConverterTypeJaError.self) {
+
+    jarust_9d46_JaConnection_new($0)
+})
+    }
+
+    deinit {
+        try! rustCall { ffi_jarust_9d46_JaConnection_object_free(pointer, $0) }
+    }
+
+
+
+
+    public func `connect`(`config`: JaConfig, `cb`: JaCallback)  {
+        try!
+    rustCall() {
+
+    jarust_9d46_JaConnection_connect(self.pointer,
+        FfiConverterTypeJaConfig.lower(`config`),
+        FfiConverterCallbackInterfaceJaCallback.lower(`cb`), $0
+    )
+}
+    }
+
+}
+
+
+public struct FfiConverterTypeJaConnection: FfiConverter {
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = JaConnection
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> JaConnection {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: JaConnection, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> JaConnection {
+        return JaConnection(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: JaConnection) -> UnsafeMutableRawPointer {
+        return value.pointer
+    }
+}
+
+
+public struct JaConfig {
+    public var `uri`: String
+    public var `apisecret`: String?
+    public var `rootNamespace`: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(`uri`: String, `apisecret`: String?, `rootNamespace`: String?) {
+        self.`uri` = `uri`
+        self.`apisecret` = `apisecret`
+        self.`rootNamespace` = `rootNamespace`
+    }
+}
+
+
+extension JaConfig: Equatable, Hashable {
+    public static func ==(lhs: JaConfig, rhs: JaConfig) -> Bool {
+        if lhs.`uri` != rhs.`uri` {
+            return false
+        }
+        if lhs.`apisecret` != rhs.`apisecret` {
+            return false
+        }
+        if lhs.`rootNamespace` != rhs.`rootNamespace` {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(`uri`)
+        hasher.combine(`apisecret`)
+        hasher.combine(`rootNamespace`)
+    }
+}
+
+
+public struct FfiConverterTypeJaConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> JaConfig {
+        return try JaConfig(
+            `uri`: FfiConverterString.read(from: &buf),
+            `apisecret`: FfiConverterOptionString.read(from: &buf),
+            `rootNamespace`: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: JaConfig, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.`uri`, into: &buf)
+        FfiConverterOptionString.write(value.`apisecret`, into: &buf)
+        FfiConverterOptionString.write(value.`rootNamespace`, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeJaConfig_lift(_ buf: RustBuffer) throws -> JaConfig {
+    return try FfiConverterTypeJaConfig.lift(buf)
+}
+
+public func FfiConverterTypeJaConfig_lower(_ value: JaConfig) -> RustBuffer {
+    return FfiConverterTypeJaConfig.lower(value)
+}
+
+
+public enum JaError {
+
+
+
+    // Simple error enums only carry a message
+    case RuntimeCreationFailure(message: String)
+
+}
+
+public struct FfiConverterTypeJaError: FfiConverterRustBuffer {
+    typealias SwiftType = JaError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> JaError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+
+
+
+        case 1: return .RuntimeCreationFailure(
+            message: try FfiConverterString.read(from: &buf)
+        )
+
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: JaError, into buf: inout [UInt8]) {
+        switch value {
+
+
+
+
+        case let .RuntimeCreationFailure(message):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(message, into: &buf)
+
+
+        }
+    }
+}
+
+
+extension JaError: Equatable, Hashable {}
+
+extension JaError: Error { }
+
+fileprivate extension NSLock {
+    func withLock<T>(f: () throws -> T) rethrows -> T {
+        self.lock()
+        defer { self.unlock() }
+        return try f()
+    }
+}
+
+fileprivate typealias UniFFICallbackHandle = UInt64
+fileprivate class UniFFICallbackHandleMap<T> {
+    private var leftMap: [UniFFICallbackHandle: T] = [:]
+    private var counter: [UniFFICallbackHandle: UInt64] = [:]
+    private var rightMap: [ObjectIdentifier: UniFFICallbackHandle] = [:]
+
+    private let lock = NSLock()
+    private var currentHandle: UniFFICallbackHandle = 0
+    private let stride: UniFFICallbackHandle = 1
+
+    func insert(obj: T) -> UniFFICallbackHandle {
+        lock.withLock {
+            let id = ObjectIdentifier(obj as AnyObject)
+            let handle = rightMap[id] ?? {
+                currentHandle += stride
+                let handle = currentHandle
+                leftMap[handle] = obj
+                rightMap[id] = handle
+                return handle
+            }()
+            counter[handle] = (counter[handle] ?? 0) + 1
+            return handle
+        }
+    }
+
+    func get(handle: UniFFICallbackHandle) -> T? {
+        lock.withLock {
+            leftMap[handle]
+        }
+    }
+
+    func delete(handle: UniFFICallbackHandle) {
+        remove(handle: handle)
+    }
+
+    @discardableResult
+    func remove(handle: UniFFICallbackHandle) -> T? {
+        lock.withLock {
+            defer { counter[handle] = (counter[handle] ?? 1) - 1 }
+            guard counter[handle] == 1 else { return leftMap[handle] }
+            let obj = leftMap.removeValue(forKey: handle)
+            if let obj = obj {
+                rightMap.removeValue(forKey: ObjectIdentifier(obj as AnyObject))
+            }
+            return obj
+        }
+    }
+}
+
+// Magic number for the Rust proxy to call using the same mechanism as every other method,
+// to free the callback once it's dropped by Rust.
+private let IDX_CALLBACK_FREE: Int32 = 0
+
+// Declaration and FfiConverters for JaCallback Callback Interface
+
+public protocol JaCallback : AnyObject {
+    func `onConnectionSuccess`()
+    func `onConnectionFailure`()
+
+}
+
+// The ForeignCallback that is passed to Rust.
+fileprivate let foreignCallbackCallbackInterfaceJaCallback : ForeignCallback =
+    { (handle: UniFFICallbackHandle, method: Int32, args: RustBuffer, out_buf: UnsafeMutablePointer<RustBuffer>) -> Int32 in
+        func `invokeOnConnectionSuccess`(_ swiftCallbackInterface: JaCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+            swiftCallbackInterface.`onConnectionSuccess`()
+            return RustBuffer()
+                // TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+        }
+        func `invokeOnConnectionFailure`(_ swiftCallbackInterface: JaCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+            swiftCallbackInterface.`onConnectionFailure`()
+            return RustBuffer()
+                // TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+        }
+
+
+        let cb: JaCallback
+        do {
+            cb = try FfiConverterCallbackInterfaceJaCallback.lift(handle)
+        } catch {
+            out_buf.pointee = FfiConverterString.lower("JaCallback: Invalid handle")
+            return -1
+        }
+
+        switch method {
+            case IDX_CALLBACK_FREE:
+                FfiConverterCallbackInterfaceJaCallback.drop(handle: handle)
+                // No return value.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 0
+            case 1:
+                do {
+                    out_buf.pointee = try `invokeOnConnectionSuccess`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
+            case 2:
+                do {
+                    out_buf.pointee = try `invokeOnConnectionFailure`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
+
+            // This should never happen, because an out of bounds method index won't
+            // ever be used. Once we can catch errors, we should return an InternalError.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+            default:
+                // An unexpected error happened.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return -1
+        }
+    }
+
+// FfiConverter protocol for callback interfaces
+fileprivate struct FfiConverterCallbackInterfaceJaCallback {
+    // Initialize our callback method with the scaffolding code
+    private static var callbackInitialized = false
+    private static func initCallback() {
+        try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
+                ffi_jarust_9d46_JaCallback_init_callback(foreignCallbackCallbackInterfaceJaCallback, err)
+        }
+    }
+    private static func ensureCallbackinitialized() {
+        if !callbackInitialized {
+            initCallback()
+            callbackInitialized = true
+        }
+    }
+
+    static func drop(handle: UniFFICallbackHandle) {
+        handleMap.remove(handle: handle)
+    }
+
+    private static var handleMap = UniFFICallbackHandleMap<JaCallback>()
+}
+
+extension FfiConverterCallbackInterfaceJaCallback : FfiConverter {
+    typealias SwiftType = JaCallback
+    // We can use Handle as the FfiType because it's a typealias to UInt64
+    typealias FfiType = UniFFICallbackHandle
+
+    public static func lift(_ handle: UniFFICallbackHandle) throws -> SwiftType {
+        ensureCallbackinitialized();
+        guard let callback = handleMap.get(handle: handle) else {
+            throw UniffiInternalError.unexpectedStaleHandle
+        }
+        return callback
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        ensureCallbackinitialized();
+        let handle: UniFFICallbackHandle = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func lower(_ v: SwiftType) -> UniFFICallbackHandle {
+        ensureCallbackinitialized();
+        return handleMap.insert(obj: v)
+    }
+
+    public static func write(_ v: SwiftType, into buf: inout [UInt8]) {
+        ensureCallbackinitialized();
+        writeInt(&buf, lower(v))
+    }
+}
+
+fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
+    typealias SwiftType = String?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterString.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterString.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
 public func `initLogger`()  {
     try!
 
     rustCall() {
 
-    jarust_f30a_init_logger($0)
+    jarust_9d46_init_logger($0)
 }
 }
 
