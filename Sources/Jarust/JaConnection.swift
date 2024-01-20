@@ -8,19 +8,29 @@
 import Foundation
 
 public class JaConnection {
-    let connection: RawJaConnection
+    var rawConnection: RawJaConnection?
+    var onConnectionSuccessCallback: (() -> Void)?
+    var onConnectionFailureCallback: (() -> Void)?
 
-    public init() throws {
-        connection = try RawJaConnection()
-    }
-
-    public func connect(config: JaConfig) {
-        connection.connect(config: config.intoRaw(), cb: self)
+    public func connect(
+        ctx: JaContext, 
+        config: JaConfig,
+        onSuccess: @escaping () -> Void,
+        onFailure: @escaping () -> Void
+    ) {
+        self.onConnectionSuccessCallback = onSuccess
+        self.onConnectionFailureCallback = onFailure
+        rawJarustConnect(ctx: ctx.intoRaw, config: config.intoRaw, cb: self)
     }
 }
 
 extension JaConnection: RawJaCallback {
-    public func onConnectionSuccess() { }
+    public func onConnectionSuccess(connection: RawJaConnection) {
+        self.rawConnection = connection
+        self.onConnectionSuccessCallback?()
+    }
 
-    public func onConnectionFailure() { }
+    public func onConnectionFailure() {
+        self.onConnectionSuccessCallback?()
+    }
 }

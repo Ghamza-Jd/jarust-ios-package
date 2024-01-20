@@ -9,6 +9,6 @@ import Foundation
 
 public struct JaLogger {
     public static func initialize() {
-        initLogger()
+        rawJarustInitLogger()
     }
 }

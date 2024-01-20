@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_jarust_90d8_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_jarust_28a8_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_jarust_90d8_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_jarust_28a8_rustbuffer_free(self, $0) }
     }
 }
 
@@ -187,9 +187,9 @@ extension FfiConverterRustBuffer {
     }
 
     public static func lower(_ value: SwiftType) -> RustBuffer {
-        var writer = createWriter()
-        write(value, into: &writer)
-        return RustBuffer(bytes: writer)
+          var writer = createWriter()
+          write(value, into: &writer)
+          return RustBuffer(bytes: writer)
     }
 }
 // An error type for FFI errors. These errors occur at the UniFFI level, not
@@ -245,9 +245,9 @@ private func rustCall<T>(_ callback: (UnsafeMutablePointer<RustCallStatus>) -> T
 }
 
 private func rustCallWithError<T, F: FfiConverter>
-(_ errorFfiConverter: F.Type, _ callback: (UnsafeMutablePointer<RustCallStatus>) -> T) throws -> T
-where F.SwiftType: Error, F.FfiType == RustBuffer
-{
+    (_ errorFfiConverter: F.Type, _ callback: (UnsafeMutablePointer<RustCallStatus>) -> T) throws -> T
+    where F.SwiftType: Error, F.FfiType == RustBuffer
+    {
     try makeRustCall(callback, errorHandler: { return try errorFfiConverter.lift($0) })
 }
 
@@ -255,25 +255,25 @@ private func makeRustCall<T>(_ callback: (UnsafeMutablePointer<RustCallStatus>) 
     var callStatus = RustCallStatus.init()
     let returnedVal = callback(&callStatus)
     switch callStatus.code {
-    case CALL_SUCCESS:
-        return returnedVal
+        case CALL_SUCCESS:
+            return returnedVal
 
-    case CALL_ERROR:
-        throw try errorHandler(callStatus.errorBuf)
+        case CALL_ERROR:
+            throw try errorHandler(callStatus.errorBuf)
 
-    case CALL_PANIC:
-        // When the rust code sees a panic, it tries to construct a RustBuffer
-        // with the message.  But if that code panics, then it just sends back
-        // an empty buffer.
-        if callStatus.errorBuf.len > 0 {
-            throw UniffiInternalError.rustPanic(try FfiConverterString.lift(callStatus.errorBuf))
-        } else {
-            callStatus.errorBuf.deallocate()
-            throw UniffiInternalError.rustPanic("Rust panic")
-        }
+        case CALL_PANIC:
+            // When the rust code sees a panic, it tries to construct a RustBuffer
+            // with the message.  But if that code panics, then it just sends back
+            // an empty buffer.
+            if callStatus.errorBuf.len > 0 {
+                throw UniffiInternalError.rustPanic(try FfiConverterString.lift(callStatus.errorBuf))
+            } else {
+                callStatus.errorBuf.deallocate()
+                throw UniffiInternalError.rustPanic("Rust panic")
+            }
 
-    default:
-        throw UniffiInternalError.unexpectedRustCallStatusCode
+        default:
+            throw UniffiInternalError.unexpectedRustCallStatusCode
     }
 }
 
@@ -320,7 +320,6 @@ fileprivate struct FfiConverterString: FfiConverter {
 
 
 public protocol RawJaConnectionProtocol {
-    func `connect`(`config`: RawJaConfig, `cb`: RawJaCallback)
 
 }
 
@@ -333,32 +332,14 @@ public class RawJaConnection: RawJaConnectionProtocol {
     required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
-    public convenience init() throws {
-        self.init(unsafeFromRawPointer: try
-
-                  rustCallWithError(FfiConverterTypeRawJaError.self) {
-
-            jarust_90d8_RawJaConnection_new($0)
-        })
-    }
 
     deinit {
-        try! rustCall { ffi_jarust_90d8_RawJaConnection_object_free(pointer, $0) }
+        try! rustCall { ffi_jarust_28a8_RawJaConnection_object_free(pointer, $0) }
     }
 
 
 
 
-    public func `connect`(`config`: RawJaConfig, `cb`: RawJaCallback)  {
-        try!
-        rustCall() {
-
-            jarust_90d8_RawJaConnection_connect(self.pointer,
-                                                FfiConverterTypeRawJaConfig.lower(`config`),
-                                                FfiConverterCallbackInterfaceRawJaCallback.lower(`cb`), $0
-            )
-        }
-    }
 
 }
 
@@ -389,6 +370,70 @@ public struct FfiConverterTypeRawJaConnection: FfiConverter {
     }
 
     public static func lower(_ value: RawJaConnection) -> UnsafeMutableRawPointer {
+        return value.pointer
+    }
+}
+
+
+public protocol RawJaContextProtocol {
+
+}
+
+public class RawJaContext: RawJaContextProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+    public convenience init() throws {
+        self.init(unsafeFromRawPointer: try
+
+    rustCallWithError(FfiConverterTypeRawJaError.self) {
+
+    jarust_28a8_RawJaContext_new($0)
+})
+    }
+
+    deinit {
+        try! rustCall { ffi_jarust_28a8_RawJaContext_object_free(pointer, $0) }
+    }
+
+
+
+
+
+}
+
+
+public struct FfiConverterTypeRawJaContext: FfiConverter {
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = RawJaContext
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RawJaContext {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: RawJaContext, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> RawJaContext {
+        return RawJaContext(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: RawJaContext) -> UnsafeMutableRawPointer {
         return value.pointer
     }
 }
@@ -569,76 +614,80 @@ private let IDX_CALLBACK_FREE: Int32 = 0
 // Declaration and FfiConverters for RawJaCallback Callback Interface
 
 public protocol RawJaCallback : AnyObject {
-    func `onConnectionSuccess`()
+    func `onConnectionSuccess`(`connection`: RawJaConnection)
     func `onConnectionFailure`()
 
 }
 
 // The ForeignCallback that is passed to Rust.
 fileprivate let foreignCallbackCallbackInterfaceRawJaCallback : ForeignCallback =
-{ (handle: UniFFICallbackHandle, method: Int32, args: RustBuffer, out_buf: UnsafeMutablePointer<RustBuffer>) -> Int32 in
-    func `invokeOnConnectionSuccess`(_ swiftCallbackInterface: RawJaCallback, _ args: RustBuffer) throws -> RustBuffer {
+    { (handle: UniFFICallbackHandle, method: Int32, args: RustBuffer, out_buf: UnsafeMutablePointer<RustBuffer>) -> Int32 in
+        func `invokeOnConnectionSuccess`(_ swiftCallbackInterface: RawJaCallback, _ args: RustBuffer) throws -> RustBuffer {
         defer { args.deallocate() }
-        swiftCallbackInterface.`onConnectionSuccess`()
-        return RustBuffer()
-        // TODO catch errors and report them back to Rust.
-        // https://github.com/mozilla/uniffi-rs/issues/351
 
-    }
-    func `invokeOnConnectionFailure`(_ swiftCallbackInterface: RawJaCallback, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
-        swiftCallbackInterface.`onConnectionFailure`()
-        return RustBuffer()
-        // TODO catch errors and report them back to Rust.
-        // https://github.com/mozilla/uniffi-rs/issues/351
+            var reader = createReader(data: Data(rustBuffer: args))
+            swiftCallbackInterface.`onConnectionSuccess`(
+                    `connection`:  try FfiConverterTypeRawJaConnection.read(from: &reader)
+                    )
+            return RustBuffer()
+                // TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
 
-    }
-
-
-    let cb: RawJaCallback
-    do {
-        cb = try FfiConverterCallbackInterfaceRawJaCallback.lift(handle)
-    } catch {
-        out_buf.pointee = FfiConverterString.lower("RawJaCallback: Invalid handle")
-        return -1
-    }
-
-    switch method {
-    case IDX_CALLBACK_FREE:
-        FfiConverterCallbackInterfaceRawJaCallback.drop(handle: handle)
-        // No return value.
-        // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-        return 0
-    case 1:
-        do {
-            out_buf.pointee = try `invokeOnConnectionSuccess`(cb, args)
-            // Value written to out buffer.
-            // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-            return 1
-        } catch let error {
-            out_buf.pointee = FfiConverterString.lower(String(describing: error))
-            return -1
         }
-    case 2:
+        func `invokeOnConnectionFailure`(_ swiftCallbackInterface: RawJaCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+            swiftCallbackInterface.`onConnectionFailure`()
+            return RustBuffer()
+                // TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+        }
+
+
+        let cb: RawJaCallback
         do {
-            out_buf.pointee = try `invokeOnConnectionFailure`(cb, args)
-            // Value written to out buffer.
-            // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-            return 1
-        } catch let error {
-            out_buf.pointee = FfiConverterString.lower(String(describing: error))
+            cb = try FfiConverterCallbackInterfaceRawJaCallback.lift(handle)
+        } catch {
+            out_buf.pointee = FfiConverterString.lower("RawJaCallback: Invalid handle")
             return -1
         }
 
-        // This should never happen, because an out of bounds method index won't
-        // ever be used. Once we can catch errors, we should return an InternalError.
-        // https://github.com/mozilla/uniffi-rs/issues/351
-    default:
-        // An unexpected error happened.
-        // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-        return -1
+        switch method {
+            case IDX_CALLBACK_FREE:
+                FfiConverterCallbackInterfaceRawJaCallback.drop(handle: handle)
+                // No return value.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 0
+            case 1:
+                do {
+                    out_buf.pointee = try `invokeOnConnectionSuccess`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
+            case 2:
+                do {
+                    out_buf.pointee = try `invokeOnConnectionFailure`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
+
+            // This should never happen, because an out of bounds method index won't
+            // ever be used. Once we can catch errors, we should return an InternalError.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+            default:
+                // An unexpected error happened.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return -1
+        }
     }
-}
 
 // FfiConverter protocol for callback interfaces
 fileprivate struct FfiConverterCallbackInterfaceRawJaCallback {
@@ -646,7 +695,7 @@ fileprivate struct FfiConverterCallbackInterfaceRawJaCallback {
     private static var callbackInitialized = false
     private static func initCallback() {
         try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_jarust_90d8_RawJaCallback_init_callback(foreignCallbackCallbackInterfaceRawJaCallback, err)
+                ffi_jarust_28a8_RawJaCallback_init_callback(foreignCallbackCallbackInterfaceRawJaCallback, err)
         }
     }
     private static func ensureCallbackinitialized() {
@@ -714,13 +763,26 @@ fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
     }
 }
 
-public func `initLogger`()  {
+public func `rawJarustInitLogger`()  {
     try!
 
     rustCall() {
 
-        jarust_90d8_init_logger($0)
-    }
+    jarust_28a8_raw_jarust_init_logger($0)
+}
+}
+
+
+public func `rawJarustConnect`(`ctx`: RawJaContext, `config`: RawJaConfig, `cb`: RawJaCallback)  {
+    try!
+
+    rustCall() {
+
+    jarust_28a8_raw_jarust_connect(
+        FfiConverterTypeRawJaContext.lower(`ctx`),
+        FfiConverterTypeRawJaConfig.lower(`config`),
+        FfiConverterCallbackInterfaceRawJaCallback.lower(`cb`), $0)
+}
 }
 
 

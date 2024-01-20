@@ -8,17 +8,13 @@
 import Foundation
 
 public struct JaConfig {
-    let uri: String
-    let apisecret: String?
-    let rootNamespace: String?
+    let rawConfig: RawJaConfig
 
-    public init(uri: String, apisecret: String? = nil, rootNamespace: String? = nil) {
-        self.uri = uri
-        self.apisecret = apisecret
-        self.rootNamespace = rootNamespace
+    var intoRaw: RawJaConfig {
+        rawConfig
     }
 
-    func intoRaw() -> RawJaConfig {
-        .init(uri: self.uri, apisecret: self.apisecret, rootNamespace: self.rootNamespace)
+    public init(uri: String, apisecret: String? = nil, rootNamespace: String? = nil) {
+        self.rawConfig = .init(uri: uri, apisecret: apisecret, rootNamespace: rootNamespace)
     }
 }
