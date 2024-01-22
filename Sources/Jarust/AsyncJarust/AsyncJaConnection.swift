@@ -24,4 +24,15 @@ public actor AsyncJaConnection {
             )
         }
     }
+
+    public func createSession(ctx: JaContext, keepAliveInterval: UInt32) async -> AsyncJaSession? {
+        await withCheckedContinuation { continuation in
+            connection.createSession(
+                ctx: ctx,
+                keepAliveInterval: keepAliveInterval,
+                onSuccess: { session in continuation.resume(returning: .init(from: session)) },
+                onFailure: { continuation.resume(returning: nil)}
+            )
+        }
+    }
 }
