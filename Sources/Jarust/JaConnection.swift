@@ -36,7 +36,7 @@ public class JaConnection {
             onSuccess(JaSession(from: rawSession))
         }
         self.onSessionCreationFailureCallback = onFailure
-        self.rawConnection?.create(kaInterval: keepAliveInterval, cb: self)
+        self.rawConnection?.create(ctx: ctx.intoRaw, kaInterval: keepAliveInterval, cb: self)
     }
 }
 
