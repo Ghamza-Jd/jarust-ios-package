@@ -31,7 +31,7 @@ public actor AsyncJaConnection {
                 ctx: ctx,
                 keepAliveInterval: keepAliveInterval,
                 onSuccess: { session in continuation.resume(returning: .init(from: session)) },
-                onFailure: { continuation.resume(returning: nil)}
+                onFailure: { continuation.resume(returning: nil) }
             )
         }
     }
