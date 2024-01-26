@@ -14,7 +14,7 @@ public struct JaContext {
         ctx
     }
 
-    public init() throws {
-        self.ctx = try RawJaContext()
+    public init(numWorkers: UInt8? = nil, name: String? = nil) throws {
+        self.ctx = try RawJaContext(numWorkers: numWorkers, name: name)
     }
 }
