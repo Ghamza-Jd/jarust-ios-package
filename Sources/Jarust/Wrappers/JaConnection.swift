@@ -9,34 +9,37 @@ import Foundation
 
 public class JaConnection {
     var rawConnection: RawJaConnection?
+    var ctx: JaContext
 
     var onConnectionSuccessCallback: (() -> Void)?
     var onConnectionFailureCallback: (() -> Void)?
     var onSessionCreationSuccessCallback: ((RawJaSession) -> Void)?
     var onSessionCreationFailureCallback: (() -> Void)?
 
+    public init(ctx: JaContext) {
+        self.ctx = ctx
+    }
+
     public func connect(
-        ctx: JaContext, 
         config: JaConfig,
         onSuccess: @escaping () -> Void,
         onFailure: @escaping () -> Void
     ) {
         self.onConnectionSuccessCallback = onSuccess
         self.onConnectionFailureCallback = onFailure
-        rawJarustConnect(ctx: ctx.intoRaw, config: config.intoRaw, cb: self)
+        rawJarustConnect(ctx: self.ctx.intoRaw, config: config.intoRaw, cb: self)
     }
 
     public func createSession(
-        ctx: JaContext,
         keepAliveInterval: UInt32,
         onSuccess: @escaping (JaSession) -> Void,
         onFailure: @escaping () -> Void
     ) {
-        self.onSessionCreationSuccessCallback = { rawSession in
-            onSuccess(JaSession(from: rawSession))
+        self.onSessionCreationSuccessCallback = { [ctx = ctx] rawSession in
+            onSuccess(JaSession(from: rawSession, ctx: ctx))
         }
         self.onSessionCreationFailureCallback = onFailure
-        self.rawConnection?.create(ctx: ctx.intoRaw, kaInterval: keepAliveInterval, cb: self)
+        self.rawConnection?.create(ctx: self.ctx.intoRaw, kaInterval: keepAliveInterval, cb: self)
     }
 }
 

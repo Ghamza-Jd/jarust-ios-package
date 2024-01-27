@@ -8,9 +8,11 @@
 import Foundation
 
 public struct JaHandle {
-    var rawHandle: RawJaHandle
+    let rawHandle: RawJaHandle
+    let ctx: JaContext
 
-    public init(from handle: RawJaHandle) {
+    public init(from handle: RawJaHandle, ctx: JaContext) {
         self.rawHandle = handle
+        self.ctx = ctx
     }
 }
