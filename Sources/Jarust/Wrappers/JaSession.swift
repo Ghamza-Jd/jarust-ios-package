@@ -9,25 +9,26 @@ import Foundation
 
 public class JaSession {
     let session: RawJaSession
+    let ctx: JaContext
 
     var onAttachSuccessCallback: ((RawJaHandle) -> Void)?
     var onAttachFailureCallback: (() -> Void)?
 
-    public init(from session: RawJaSession) {
+    public init(from session: RawJaSession, ctx: JaContext) {
         self.session = session
+        self.ctx = ctx
     }
 
     public func attach(
-        ctx: JaContext,
         pluginId: String,
         onSuccess: @escaping (JaHandle) -> Void,
         onFailure: @escaping () -> Void
     ) {
-        self.onAttachSuccessCallback = { rawHandle in
-            onSuccess(JaHandle(from: rawHandle))
+        self.onAttachSuccessCallback = { [ctx = ctx] rawHandle in
+            onSuccess(JaHandle(from: rawHandle, ctx: ctx))
         }
         self.onAttachFailureCallback = onFailure
-        self.session.attach(ctx: ctx.intoRaw, pluginId: pluginId, cb: self)
+        self.session.attach(ctx: self.ctx.intoRaw, pluginId: pluginId, cb: self)
     }
 }
 
