@@ -13,4 +13,16 @@ public actor AsyncJaHandle {
     init(from handle: JaHandle) {
         self.handle = handle
     }
+
+    public func message(_ msg: String) {
+        self.handle.message(msg)
+    }
+
+    public func events() -> AsyncStream<String> {
+        AsyncStream { continuation in
+            handle.onEventCallback = { evt in
+                continuation.yield(evt)
+            }
+        }
+    }
 }

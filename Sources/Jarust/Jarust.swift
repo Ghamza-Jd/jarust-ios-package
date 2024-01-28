@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_jarust_f419_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_jarust_cac3_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_jarust_f419_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_jarust_cac3_rustbuffer_free(self, $0) }
     }
 }
 
@@ -361,7 +361,7 @@ public class RawJaConnection: RawJaConnectionProtocol {
     }
 
     deinit {
-        try! rustCall { ffi_jarust_f419_RawJaConnection_object_free(pointer, $0) }
+        try! rustCall { ffi_jarust_cac3_RawJaConnection_object_free(pointer, $0) }
     }
 
 
@@ -371,7 +371,7 @@ public class RawJaConnection: RawJaConnectionProtocol {
         try!
     rustCall() {
 
-    jarust_f419_RawJaConnection_create(self.pointer,
+    jarust_cac3_RawJaConnection_create(self.pointer,
         FfiConverterTypeRawJaContext.lower(`ctx`),
         FfiConverterUInt32.lower(`kaInterval`),
         FfiConverterCallbackInterfaceRawJaConnectionCallback.lower(`cb`), $0
@@ -431,14 +431,14 @@ public class RawJaContext: RawJaContextProtocol {
 
     rustCallWithError(FfiConverterTypeRawJaError.self) {
 
-    jarust_f419_RawJaContext_new(
+    jarust_cac3_RawJaContext_new(
         FfiConverterOptionUInt8.lower(`numWorkers`),
         FfiConverterOptionString.lower(`name`), $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_jarust_f419_RawJaContext_object_free(pointer, $0) }
+        try! rustCall { ffi_jarust_cac3_RawJaContext_object_free(pointer, $0) }
     }
 
 
@@ -480,6 +480,8 @@ public struct FfiConverterTypeRawJaContext: FfiConverter {
 
 
 public protocol RawJaHandleProtocol {
+    func `message`(`ctx`: RawJaContext, `message`: String)
+    func `assignHandler`(`ctx`: RawJaContext, `cb`: RawJaEventsCallback)
 
 }
 
@@ -494,12 +496,32 @@ public class RawJaHandle: RawJaHandleProtocol {
     }
 
     deinit {
-        try! rustCall { ffi_jarust_f419_RawJaHandle_object_free(pointer, $0) }
+        try! rustCall { ffi_jarust_cac3_RawJaHandle_object_free(pointer, $0) }
     }
 
 
 
 
+    public func `message`(`ctx`: RawJaContext, `message`: String)  {
+        try!
+    rustCall() {
+
+    jarust_cac3_RawJaHandle_message(self.pointer,
+        FfiConverterTypeRawJaContext.lower(`ctx`),
+        FfiConverterString.lower(`message`), $0
+    )
+}
+    }
+    public func `assignHandler`(`ctx`: RawJaContext, `cb`: RawJaEventsCallback)  {
+        try!
+    rustCall() {
+
+    jarust_cac3_RawJaHandle_assign_handler(self.pointer,
+        FfiConverterTypeRawJaContext.lower(`ctx`),
+        FfiConverterCallbackInterfaceRawJaEventsCallback.lower(`cb`), $0
+    )
+}
+    }
 
 }
 
@@ -551,7 +573,7 @@ public class RawJaSession: RawJaSessionProtocol {
     }
 
     deinit {
-        try! rustCall { ffi_jarust_f419_RawJaSession_object_free(pointer, $0) }
+        try! rustCall { ffi_jarust_cac3_RawJaSession_object_free(pointer, $0) }
     }
 
 
@@ -561,7 +583,7 @@ public class RawJaSession: RawJaSessionProtocol {
         try!
     rustCall() {
 
-    jarust_f419_RawJaSession_attach(self.pointer,
+    jarust_cac3_RawJaSession_attach(self.pointer,
         FfiConverterTypeRawJaContext.lower(`ctx`),
         FfiConverterString.lower(`pluginId`),
         FfiConverterCallbackInterfaceRawJaSessionCallback.lower(`cb`), $0
@@ -901,7 +923,7 @@ fileprivate struct FfiConverterCallbackInterfaceRawJaConnectionCallback {
     private static var callbackInitialized = false
     private static func initCallback() {
         try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-                ffi_jarust_f419_RawJaConnectionCallback_init_callback(foreignCallbackCallbackInterfaceRawJaConnectionCallback, err)
+                ffi_jarust_cac3_RawJaConnectionCallback_init_callback(foreignCallbackCallbackInterfaceRawJaConnectionCallback, err)
         }
     }
     private static func ensureCallbackinitialized() {
@@ -920,6 +942,120 @@ fileprivate struct FfiConverterCallbackInterfaceRawJaConnectionCallback {
 
 extension FfiConverterCallbackInterfaceRawJaConnectionCallback : FfiConverter {
     typealias SwiftType = RawJaConnectionCallback
+    // We can use Handle as the FfiType because it's a typealias to UInt64
+    typealias FfiType = UniFFICallbackHandle
+
+    public static func lift(_ handle: UniFFICallbackHandle) throws -> SwiftType {
+        ensureCallbackinitialized();
+        guard let callback = handleMap.get(handle: handle) else {
+            throw UniffiInternalError.unexpectedStaleHandle
+        }
+        return callback
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        ensureCallbackinitialized();
+        let handle: UniFFICallbackHandle = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func lower(_ v: SwiftType) -> UniFFICallbackHandle {
+        ensureCallbackinitialized();
+        return handleMap.insert(obj: v)
+    }
+
+    public static func write(_ v: SwiftType, into buf: inout [UInt8]) {
+        ensureCallbackinitialized();
+        writeInt(&buf, lower(v))
+    }
+}
+
+
+
+// Declaration and FfiConverters for RawJaEventsCallback Callback Interface
+
+public protocol RawJaEventsCallback : AnyObject {
+    func `onEvent`(`event`: String)
+
+}
+
+// The ForeignCallback that is passed to Rust.
+fileprivate let foreignCallbackCallbackInterfaceRawJaEventsCallback : ForeignCallback =
+    { (handle: UniFFICallbackHandle, method: Int32, args: RustBuffer, out_buf: UnsafeMutablePointer<RustBuffer>) -> Int32 in
+        func `invokeOnEvent`(_ swiftCallbackInterface: RawJaEventsCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+
+            var reader = createReader(data: Data(rustBuffer: args))
+            swiftCallbackInterface.`onEvent`(
+                    `event`:  try FfiConverterString.read(from: &reader)
+                    )
+            return RustBuffer()
+                // TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+        }
+
+
+        let cb: RawJaEventsCallback
+        do {
+            cb = try FfiConverterCallbackInterfaceRawJaEventsCallback.lift(handle)
+        } catch {
+            out_buf.pointee = FfiConverterString.lower("RawJaEventsCallback: Invalid handle")
+            return -1
+        }
+
+        switch method {
+            case IDX_CALLBACK_FREE:
+                FfiConverterCallbackInterfaceRawJaEventsCallback.drop(handle: handle)
+                // No return value.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 0
+            case 1:
+                do {
+                    out_buf.pointee = try `invokeOnEvent`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
+
+            // This should never happen, because an out of bounds method index won't
+            // ever be used. Once we can catch errors, we should return an InternalError.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+            default:
+                // An unexpected error happened.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return -1
+        }
+    }
+
+// FfiConverter protocol for callback interfaces
+fileprivate struct FfiConverterCallbackInterfaceRawJaEventsCallback {
+    // Initialize our callback method with the scaffolding code
+    private static var callbackInitialized = false
+    private static func initCallback() {
+        try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
+                ffi_jarust_cac3_RawJaEventsCallback_init_callback(foreignCallbackCallbackInterfaceRawJaEventsCallback, err)
+        }
+    }
+    private static func ensureCallbackinitialized() {
+        if !callbackInitialized {
+            initCallback()
+            callbackInitialized = true
+        }
+    }
+
+    static func drop(handle: UniFFICallbackHandle) {
+        handleMap.remove(handle: handle)
+    }
+
+    private static var handleMap = UniFFICallbackHandleMap<RawJaEventsCallback>()
+}
+
+extension FfiConverterCallbackInterfaceRawJaEventsCallback : FfiConverter {
+    typealias SwiftType = RawJaEventsCallback
     // We can use Handle as the FfiType because it's a typealias to UInt64
     typealias FfiType = UniFFICallbackHandle
 
@@ -1034,7 +1170,7 @@ fileprivate struct FfiConverterCallbackInterfaceRawJaSessionCallback {
     private static var callbackInitialized = false
     private static func initCallback() {
         try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-                ffi_jarust_f419_RawJaSessionCallback_init_callback(foreignCallbackCallbackInterfaceRawJaSessionCallback, err)
+                ffi_jarust_cac3_RawJaSessionCallback_init_callback(foreignCallbackCallbackInterfaceRawJaSessionCallback, err)
         }
     }
     private static func ensureCallbackinitialized() {
@@ -1128,7 +1264,7 @@ public func `rawJarustInitLogger`()  {
 
     rustCall() {
 
-    jarust_f419_raw_jarust_init_logger($0)
+    jarust_cac3_raw_jarust_init_logger($0)
 }
 }
 
@@ -1138,7 +1274,7 @@ public func `rawJarustConnect`(`ctx`: RawJaContext, `config`: RawJaConfig, `cb`:
 
     rustCall() {
 
-    jarust_f419_raw_jarust_connect(
+    jarust_cac3_raw_jarust_connect(
         FfiConverterTypeRawJaContext.lower(`ctx`),
         FfiConverterTypeRawJaConfig.lower(`config`),
         FfiConverterCallbackInterfaceRawJaConnectionCallback.lower(`cb`), $0)
