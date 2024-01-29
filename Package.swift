@@ -19,8 +19,8 @@ let package = Package(
         .binaryTarget(
             name: "JarustNative",
             // path: "./JarustNative.zip"
-            url: "https://github.com/Ghamza-Jd/jarust-mobile-sdk/releases/download/v0.1.0/JarustNative.zip",
-            checksum: "e811e5cb123131d3d4ccc2836834e276424a6e86d8e1402f57d8c04eb6b46a1d"
+            url: "https://github.com/Ghamza-Jd/jarust-mobile-sdk/releases/download/v0.2.0/JarustNative.zip",
+            checksum: "018b82611d91b20eace275a26824036006e002e89bd7bc136500532421c44e0d"
         ),
         .testTarget(
             name: "JarustTests",
