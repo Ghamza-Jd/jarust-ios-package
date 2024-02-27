@@ -23,4 +23,13 @@ public actor AsyncJaSession {
             )
         }
     }
+
+    public func attachEchotest() async -> AsyncEchotestHandle? {
+        await withCheckedContinuation { continuation in
+            session.attachEchotest(
+                onSuccess: { continuation.resume(returning: .init(from: $0)) },
+                onFailure: { continuation.resume(returning: nil) }
+            )
+        }
+    }
 }
